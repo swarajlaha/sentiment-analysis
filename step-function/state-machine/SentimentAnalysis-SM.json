@@ -1,0 +1,61 @@
+  
+{
+  "StartAt": "ReadCSV",
+  "States": {
+    "ReadCSV": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:xx-xxxx-x:xxxxxxxxxx:function:lambdaReadCSV",
+      "Next": "ProductSentimentAnalysis"
+    }, 
+    "ProductSentimentAnalysis": {
+      "Type" : "Task",
+      "Resource": "arn:aws:lambda:xx-xxxx-x:xxxxxxxxxx:function:lambdaSentiment",
+      "Next": "ProductResultChoice"
+    },
+    "ProductResultChoice": {
+      "Type": "Choice",
+      "Choices": [
+        {
+      "Or": [
+        {
+          "Variable": "$.sentiment",
+          "StringEquals": "POSITIVE"
+        },
+        {
+          "Variable": "$.sentiment",
+          "StringEquals": "NEUTRAL"
+        }
+        ],
+        "Next": "WriteToDB"
+        },
+        {
+          "Variable": "$.sentiment",
+          "StringEquals": "NEGATIVE",
+          "Next": "PublishToSNS"
+        }
+      ],
+      "Default": "SentimentFail"
+    },
+    "SentimentFail": {
+      "Type": "Fail",
+      "Cause": "Sentiment Analysis Failed!"
+    },
+    
+   "PublishToSNS": 
+    {
+     "Type": "Task",
+     "Resource": "arn:aws:lambda:xx-xxxx-x:xxxxxxxxxx:function:lambdaSNS",
+      "Next": "WriteToDB"
+    },
+    "WriteToDB": 
+    {
+     "Type": "Task",
+     "Resource": "arn:aws:lambda:xx-xxxx-x:xxxxxxxxxx:function:sentimentAnalysisWriteDynamoDB",
+      "Next": "Success"
+    }, 
+     "Success": 
+    {
+      "Type": "Succeed"
+    }
+  }
+}
